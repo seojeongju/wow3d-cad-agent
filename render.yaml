@@ -5,7 +5,7 @@ services:
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
-    staticPublishPath: ./frontend/dist
+    staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE
         value: https://wow3d-cad-agent.onrender.com
