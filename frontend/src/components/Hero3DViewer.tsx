@@ -14,27 +14,25 @@ function HeroModel() {
 
   return (
     <group>
-      {/* Main torus knot - 색상을 페이지와 조화되게 뮤트 톤 */}
+      {/* Main torus knot - 배경과 대비되도록 밝은 메탈 톤 */}
       <mesh ref={meshRef} castShadow receiveShadow>
         <torusKnotGeometry args={[0.6, 0.2, 128, 32]} />
         <meshStandardMaterial
-          color="#71717a"
-          metalness={0.75}
-          roughness={0.25}
-          envMapIntensity={0.8}
-          emissive="#27272a"
-          emissiveIntensity={0.08}
+          color="#d4d4d8"
+          metalness={0.7}
+          roughness={0.3}
+          envMapIntensity={1}
         />
       </mesh>
-      {/* Inner ring - 악센트를 은은하게 */}
+      {/* Inner ring - 악센트 링, 형태가 보이도록 */}
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -0.3]}>
         <torusGeometry args={[0.85, 0.03, 16, 64]} />
         <meshStandardMaterial
-          color="#52525b"
-          metalness={0.8}
-          roughness={0.2}
+          color="#818cf8"
+          metalness={0.6}
+          roughness={0.35}
           transparent
-          opacity={0.5}
+          opacity={0.75}
         />
       </mesh>
     </group>
@@ -54,10 +52,10 @@ export function Hero3DViewer({ className = "" }: Hero3DViewerProps) {
         dpr={[1, 2]}
       >
         <color attach="background" args={["#0f0f12"]} />
-        <ambientLight intensity={0.35} />
-        <directionalLight position={[5, 5, 5]} intensity={0.9} color="#e4e4e7" />
-        <directionalLight position={[-3, 2, -2]} intensity={0.35} color="#a1a1aa" />
-        <pointLight position={[0, 2, 2]} intensity={0.25} color="#6366f1" />
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 5, 5]} intensity={1.4} color="#ffffff" />
+        <directionalLight position={[-3, 2, -2]} intensity={0.6} color="#e4e4e7" />
+        <pointLight position={[0, 2, 2]} intensity={0.5} color="#6366f1" />
         <HeroModel />
         <OrbitControls
           makeDefault
