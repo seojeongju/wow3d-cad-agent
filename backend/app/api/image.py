@@ -191,9 +191,11 @@ async def image_export(job_id: str = Query(...), format: str = Query("stl", rege
     filename = f"model.{format}"
     if supabase_storage.is_configured():
         storage_path = supabase_storage.exports_path_image(job_id, filename)
-        if supabase_storage.file_exists(_BUCKET_EXPORTS, storage_path):
+        try:
             url = supabase_storage.get_signed_url(_BUCKET_EXPORTS, storage_path)
             return RedirectResponse(url=url, status_code=302)
+        except Exception:
+            pass
     export_path = settings.export_dir / "image" / job_id
     path = export_path / filename
     if not path.exists():

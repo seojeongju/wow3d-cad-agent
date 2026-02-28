@@ -62,7 +62,6 @@ def file_exists(bucket: str, path: str) -> bool:
     if not client:
         return False
     try:
-        # list the path's parent dir and see if basename is in it
         parts = path.replace("\\", "/").split("/")
         if len(parts) <= 1:
             folder, name = "", path
@@ -71,7 +70,9 @@ def file_exists(bucket: str, path: str) -> bool:
             name = parts[-1]
         items = client.storage.from_(bucket).list(folder)
         for item in items:
-            if item.get("name") == name:
+            # Support both dict (item.get("name")) and object (e.g. FileObject.name)
+            item_name = item.get("name") if isinstance(item, dict) else getattr(item, "name", None)
+            if item_name == name:
                 return True
         return False
     except Exception:

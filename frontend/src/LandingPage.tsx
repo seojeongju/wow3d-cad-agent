@@ -5,6 +5,7 @@ import "./LandingPage.css";
 
 const Viewer3D = lazy(() => import("./components/Viewer3D").then((m) => ({ default: m.Viewer3D })));
 const Hero3DViewer = lazy(() => import("./components/Hero3DViewer").then((m) => ({ default: m.Hero3DViewer })));
+const Showcase3DItem = lazy(() => import("./components/Showcase3DItem").then((m) => ({ default: m.Showcase3DItem })));
 
 type Tab = "cad" | "image";
 
@@ -279,10 +280,17 @@ export default function LandingPage() {
 
       <section className="landing-showcase">
         <h2>3D 모델 쇼케이스</h2>
+        <p className="landing-showcase-sub">지원 포맷별 샘플 · 엔진, 건축, 기계 등 다양한 분야에 활용 가능</p>
         <div className="landing-showcase-grid">
-          <div className="landing-showcase-item">STL</div>
-          <div className="landing-showcase-item">OBJ</div>
-          <div className="landing-showcase-item">GLB</div>
+          <Suspense fallback={<div className="landing-showcase-item landing-showcase-placeholder">STL</div>}>
+            <Showcase3DItem theme="machinery" format="STL" description="3D 프린팅·CAM 표준. 기계 부품, 금형 등에 적합" />
+          </Suspense>
+          <Suspense fallback={<div className="landing-showcase-item landing-showcase-placeholder">OBJ</div>}>
+            <Showcase3DItem theme="architecture" format="OBJ" description="건축·인테리어·시각화. 텍스처·재질 호환" />
+          </Suspense>
+          <Suspense fallback={<div className="landing-showcase-item landing-showcase-placeholder">GLB</div>}>
+            <Showcase3DItem theme="engine" format="GLB" description="웹·AR/VR·엔진 시각화. 단일 파일에 메쉬·재질 포함" />
+          </Suspense>
         </div>
       </section>
 
