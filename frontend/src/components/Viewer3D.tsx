@@ -34,8 +34,25 @@ type Viewer3DProps = {
   className?: string;
 };
 
+const FIT_SIZE = 2; // fit model so max dimension is this (camera at ~4,4,4)
+
 function StlModel({ url }: { url: string }) {
   const geom = useLoader(STLLoader, url);
+  const fitted = useRef(false);
+  if (!fitted.current) {
+    geom.computeBoundingBox();
+    geom.computeVertexNormals();
+    const bbox = geom.boundingBox!;
+    const center = new THREE.Vector3();
+    bbox.getCenter(center);
+    geom.translate(-center.x, -center.y, -center.z);
+    const size = new THREE.Vector3();
+    bbox.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z, 1e-6);
+    const scale = FIT_SIZE / maxDim;
+    geom.scale(scale, scale, scale);
+    fitted.current = true;
+  }
   return (
     <mesh geometry={geom}>
       <meshStandardMaterial color="#6b7fd7" metalness={0.2} roughness={0.6} />
@@ -46,6 +63,7 @@ function StlModel({ url }: { url: string }) {
 function ObjModel({ url }: { url: string }) {
   const obj = useLoader(OBJLoader, url);
   const clonedRef = useRef<THREE.Group | null>(null);
+  const fitted = useRef(false);
   const cloned = obj.clone();
   clonedRef.current = cloned;
   cloned.traverse((c) => {
@@ -56,6 +74,17 @@ function ObjModel({ url }: { url: string }) {
       }
     }
   });
+  if (!fitted.current) {
+    const box = new THREE.Box3().setFromObject(cloned);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    cloned.position.sub(center);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z, 1e-6);
+    cloned.scale.multiplyScalar(FIT_SIZE / maxDim);
+    fitted.current = true;
+  }
   useEffect(() => () => { if (clonedRef.current) disposeObject(clonedRef.current); }, []);
   return <primitive object={cloned} />;
 }
@@ -63,6 +92,7 @@ function ObjModel({ url }: { url: string }) {
 function GlbModel({ url }: { url: string }) {
   const { scene } = useGLTF(url, true);
   const cloned = scene.clone(true);
+  const fitted = useRef(false);
   cloned.traverse((c) => {
     if ((c as THREE.Mesh).isMesh) {
       const m = (c as THREE.Mesh).material;
@@ -71,6 +101,17 @@ function GlbModel({ url }: { url: string }) {
       }
     }
   });
+  if (!fitted.current) {
+    const box = new THREE.Box3().setFromObject(cloned);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    cloned.position.sub(center);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z, 1e-6);
+    cloned.scale.multiplyScalar(FIT_SIZE / maxDim);
+    fitted.current = true;
+  }
   useEffect(() => () => disposeObject(cloned), []);
   return <primitive object={cloned} />;
 }
