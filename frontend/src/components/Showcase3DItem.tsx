@@ -24,7 +24,7 @@ function MachineryModel() {
   );
 }
 
-/** 건축: 단순 건물 블록 (기둥 + 상단) */
+/** 건축: 단순 건물 블록 */
 function ArchitectureModel() {
   const ref = useRef<THREE.Group>(null);
   useFrame((_, delta) => {
@@ -44,7 +44,7 @@ function ArchitectureModel() {
   );
 }
 
-/** 엔진: 실린더(실린더 블록 + 피스톤 느낌) */
+/** 엔진: 실린더 블록 */
 function EngineModel() {
   const ref = useRef<THREE.Group>(null);
   useFrame((_, delta) => {
@@ -74,24 +74,36 @@ type Showcase3DItemProps = {
   theme: Theme;
   format: "STL" | "OBJ" | "GLB";
   description: string;
+  useCase?: string;
 };
 
-export function Showcase3DItem({ theme, format, description }: Showcase3DItemProps) {
+export function Showcase3DItem({ theme, format, description, useCase }: Showcase3DItemProps) {
   return (
-    <div className="landing-showcase-item">
-      <div className="landing-showcase-item-3d">
-        <Canvas camera={{ position: [0, 0, 1.2], fov: 50 }} gl={{ antialias: true, alpha: true }} dpr={[1, 1.5]}>
-          <color attach="background" args={["transparent"]} />
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[2, 2, 2]} intensity={0.8} />
+    <article className="showcase-card">
+      <div className="showcase-card-viewport">
+        <Canvas
+          camera={{ position: [0, 0, 1.35], fov: 42 }}
+          gl={{ antialias: true, alpha: true }}
+          dpr={[1, 2]}
+        >
+          <color attach="background" args={["#0c0c0f"]} />
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[3, 2, 4]} intensity={0.9} />
+          <directionalLight position={[-2, 1, 2]} intensity={0.25} />
+          <pointLight position={[0, 1, 1]} intensity={0.3} distance={3} />
           <ThemeModel theme={theme} />
         </Canvas>
+        <span className="showcase-card-format-badge">{format}</span>
+        {useCase && <span className="showcase-card-use-badge">{useCase}</span>}
       </div>
-      <span className="landing-showcase-item-format">{format}</span>
-      <p className="landing-showcase-item-desc">{description}</p>
-      <a href="#converter" className="landing-showcase-item-link">
-        이 포맷으로 변환하기
-      </a>
-    </div>
+      <div className="showcase-card-body">
+        <h3 className="showcase-card-title">{format} 포맷</h3>
+        <p className="showcase-card-desc">{description}</p>
+        <a href="#converter" className="showcase-card-cta">
+          이 포맷으로 변환하기
+          <span className="showcase-card-cta-arrow" aria-hidden>→</span>
+        </a>
+      </div>
+    </article>
   );
 }

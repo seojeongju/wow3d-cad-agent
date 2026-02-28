@@ -111,15 +111,15 @@ export default function LandingPage() {
       <section className="landing-hero">
         <div className="landing-hero-grid">
           <div className="landing-hero-content">
-            <div className="landing-hero-badge">2D → 3D AI 변환</div>
+            <div className="landing-hero-badge">2D → 3D 변환</div>
             <h1 className="landing-hero-title">
               <span className="landing-hero-title-line">2D에서 3D로의</span>
               <span className="landing-hero-title-line landing-hero-title-accent">재구성</span>
             </h1>
-            <p className="landing-hero-subhead">도면·이미지로 제조 가능한 3D 모델 생성</p>
+            <p className="landing-hero-subhead">도면·이미지 업로드 한 번에 STL·OBJ·GLB 3D 모델 생성</p>
             <p className="landing-hero-sub">
-              <strong>AI 기술</strong>과 도면 파싱을 결합해 2D 도면(DXF)과 이미지(손글씨·스케치)를
-              업로드하면 즉시 품질 높은 3D 모델로 변환됩니다. <strong>한 곳에서</strong> 속도와 정확도를 경험하세요.
+              <strong>DXF·DWG</strong> 도면은 서버에서 자동 변환 후 3D로 만들고,
+              <strong>이미지</strong>는 윤곽 돌출 또는 AI 3D 생성으로 모델을 만듭니다. 결과물을 STL·OBJ·GLB로 바로 다운로드할 수 있습니다.
             </p>
             <div className="landing-hero-cta">
               <a href="#converter" className="landing-hero-cta-btn">무료 체험 시작</a>
@@ -143,7 +143,7 @@ export default function LandingPage() {
             className={`landing-tab ${tab === "cad" ? "active" : ""}`}
             onClick={() => setTab("cad")}
           >
-            CAD 도면 → 3D
+            DXF·DWG → 3D
           </button>
           <button
             type="button"
@@ -224,15 +224,15 @@ export default function LandingPage() {
           <p>클릭하거나 파일을 끌어다 놓으세요</p>
           <span>
             {tab === "cad"
-              ? "지원 형식: DXF / DWG (DXF 권장) · 최대 50MB"
-              : "지원 형식: JPG / JPEG / PNG / BMP · 최대 50MB"}
+              ? "지원 형식: DXF, DWG (업로드 시 자동 변환) · 최대 50MB"
+              : "지원 형식: JPG, JPEG, PNG, BMP · 최대 50MB"}
           </span>
         </div>
 
         {progress === "uploading" && (
           <div className="landing-status loading">
             <span className="landing-spinner" aria-hidden />
-            <span>{tab === "cad" ? "도면 분석 및 3D 변환 중…" : "이미지 분석 및 3D 변환 중…"}</span>
+            <span>{tab === "cad" ? "도면 변환 및 3D 생성 중…" : "이미지 분석 및 3D 변환 중…"}</span>
           </div>
         )}
         {progress === "done" && currentJobId && (
@@ -250,7 +250,7 @@ export default function LandingPage() {
         {tab === "cad" && (
           <div className="landing-dwg-hint">
             <p className="landing-note">
-              <strong>DWG 파일을 사용하려면</strong> 오토캐드에서 [다른 이름으로 저장] → 형식을 <strong>DXF</strong>로 선택한 뒤 저장하고, 저장된 DXF 파일을 업로드하세요.
+              <strong>DXF·DWG</strong> 모두 그대로 업로드하면 서버에서 자동으로 3D(STL·OBJ)로 변환됩니다. 별도 변환 작업 없이 사용하세요.
             </p>
           </div>
         )}
@@ -279,17 +279,17 @@ export default function LandingPage() {
       </section>
 
       <section className="landing-showcase">
-        <h2>3D 모델 쇼케이스</h2>
-        <p className="landing-showcase-sub">지원 포맷별 샘플 · 엔진, 건축, 기계 등 다양한 분야에 활용 가능</p>
+        <h2>지원 출력 포맷</h2>
+        <p className="landing-showcase-sub">변환 결과를 원하는 포맷으로 내려받아 3D 프린팅, CAM, 시각화 툴에서 바로 사용하세요.</p>
         <div className="landing-showcase-grid">
-          <Suspense fallback={<div className="landing-showcase-item landing-showcase-placeholder">STL</div>}>
-            <Showcase3DItem theme="machinery" format="STL" description="3D 프린팅·CAM 표준. 기계 부품, 금형 등에 적합" />
+          <Suspense fallback={<div className="landing-showcase-placeholder">STL 로딩 중…</div>}>
+            <Showcase3DItem theme="machinery" format="STL" useCase="3D 프린팅 · CAM" description="제조·프로토타입 표준 포맷. 슬라이서·가공 소프트웨어에서 그대로 사용 가능합니다." />
           </Suspense>
-          <Suspense fallback={<div className="landing-showcase-item landing-showcase-placeholder">OBJ</div>}>
-            <Showcase3DItem theme="architecture" format="OBJ" description="건축·인테리어·시각화. 텍스처·재질 호환" />
+          <Suspense fallback={<div className="landing-showcase-placeholder">OBJ 로딩 중…</div>}>
+            <Showcase3DItem theme="architecture" format="OBJ" useCase="시각화 · 인테리어" description="메쉬·텍스처·재질 호환. 건축·인테리어·영상 툴에서 널리 지원됩니다." />
           </Suspense>
-          <Suspense fallback={<div className="landing-showcase-item landing-showcase-placeholder">GLB</div>}>
-            <Showcase3DItem theme="engine" format="GLB" description="웹·AR/VR·엔진 시각화. 단일 파일에 메쉬·재질 포함" />
+          <Suspense fallback={<div className="landing-showcase-placeholder">GLB 로딩 중…</div>}>
+            <Showcase3DItem theme="engine" format="GLB" useCase="웹 · AR/VR" description="glTF 바이너리. 웹 뷰어·게임 엔진·AR/VR에서 단일 파일로 로드할 수 있습니다." />
           </Suspense>
         </div>
       </section>
@@ -301,24 +301,24 @@ export default function LandingPage() {
         </p>
         <div className="landing-cards">
           <div className="landing-card">
-            <h3>고해상도 파이프라인</h3>
+            <h3>CAD 도면 → 3D</h3>
             <p>
-              디테일이 중요합니다. 2D 도면과 이미지의 선, 윤곽, 가장자리를 선명하게 유지한 채
-              품질 높은 3D 메쉬로 변환합니다.
+              DXF·DWG 파일을 업로드하면 폐곡선을 추출해 돌출 높이만 지정해 3D로 만듭니다.
+              DWG는 서버에서 자동으로 변환되므로 별도 작업 없이 사용할 수 있습니다.
             </p>
           </div>
           <div className="landing-card">
-            <h3>완전한 형상 재구성</h3>
+            <h3>이미지 → 3D</h3>
             <p>
-              DXF 폐곡선과 이미지 윤곽을 정확히 추출해 앞·뒤·측면이 갖춰진 360° 3D 모델을 생성하며,
-              어떤 각도에서도 활용 가능합니다.
+              스케치·도안 이미지를 업로드해 <strong>간단 돌출</strong>(윤곽 추출 후 높이 지정) 또는
+              <strong>AI 3D 생성</strong>(Meshy 연동, 실패 시 돌출로 대체)으로 3D 모델을 만듭니다.
             </p>
           </div>
           <div className="landing-card">
-            <h3>표면 정확도</h3>
+            <h3>표준 포맷 내보내기</h3>
             <p>
-              거친 노이즈 없이 부드러운 표면과 정확한 단면 돌출을 제공하며,
-              제조·프린팅·시각화에 바로 사용할 수 있는 품질을 목표로 합니다.
+              변환 결과를 STL·OBJ·GLB 등으로 다운로드해 3D 프린팅, CAM, 게임·시각화 툴에서
+              그대로 불러올 수 있습니다.
             </p>
           </div>
         </div>
@@ -340,37 +340,37 @@ export default function LandingPage() {
           <div className="landing-faq-item">
             <h4>Wow3D CAD Agent란?</h4>
             <p>
-              2D 도면(DXF)과 2D 이미지(손글씨, 스케치 등)를 3D 모델로 변환하는 웹 도구입니다.
-              CAD 파싱(ezdxf)과 이미지 윤곽 추출(OpenCV)을 결합하고, 필요 시 AI API(Meshy 등)를
-              활용해 고품질 3D 에셋을 생성합니다.
+              CAD 도면(DXF·DWG)과 이미지(JPG, PNG 등)를 3D 모델로 변환하는 웹 도구입니다.
+              도면은 폐곡선 추출 후 돌출로, 이미지는 윤곽 돌출 또는 AI(Meshy) 3D 생성으로 변환하며,
+              결과를 STL·OBJ·GLB로 다운로드할 수 있습니다.
+            </p>
+          </div>
+          <div className="landing-faq-item">
+            <h4>DWG는 어떻게 되나요?</h4>
+            <p>
+              DWG 파일을 업로드하면 서버에서 자동으로 DXF로 변환한 뒤 3D로 처리됩니다. API2Convert API 키 또는
+              ODA File Converter를 설정해 두면 별도 변환 없이 DWG를 그대로 업로드할 수 있습니다.
             </p>
           </div>
           <div className="landing-faq-item">
             <h4>어디에 활용할 수 있나요?</h4>
             <p>
-              게임 개발, 시각 효과, 제품 모델링, 3D 프린팅, 설계 시각화 등 다양한 분야에서
-              생성된 3D 모델을 사용할 수 있습니다.
-            </p>
-          </div>
-          <div className="landing-faq-item">
-            <h4>주요 장점은 무엇인가요?</h4>
-            <p>
-              도면 기반의 정확한 폐곡선 추출과 돌출, 이미지 기반의 간단 돌출·AI 3D 생성 옵션을
-              한 곳에서 제공하며, STL·OBJ·GLB 등 표준 포맷으로 내보낼 수 있습니다.
+              3D 프린팅, CAM, 제품·건축 시각화, 게임·AR 에셋 등 생성된 STL·OBJ·GLB를
+              각종 소프트웨어에서 바로 불러와 사용할 수 있습니다.
             </p>
           </div>
           <div className="landing-faq-item">
             <h4>어떻게 사용하나요?</h4>
             <p>
-              CAD 도면은 DXF 파일을, 이미지는 JPG/PNG 등을 업로드하면 됩니다. 이미지의 경우
-              「간단 돌출」또는 「AI 3D 생성」을 선택할 수 있으며, 최대 50MB까지 지원합니다.
+              「CAD 도면 → 3D」탭에서 DXF 또는 DWG를, 「이미지 → 3D」탭에서 JPG/PNG 등을 업로드하면 됩니다.
+              돌출 높이·색 반전·윤곽 감도·AI 3D 생성 여부 등을 선택할 수 있으며, 최대 50MB까지 지원합니다.
             </p>
           </div>
           <div className="landing-faq-item">
-            <h4>업로드·다운로드 지원 형식은?</h4>
+            <h4>지원 형식은?</h4>
             <p>
-              업로드: DXF, DWG(CAD) / JPG, JPEG, PNG, BMP(이미지). 다운로드: STL, OBJ, GLB(AI 3D 시) 등
-              주요 3D 소프트웨어에서 바로 불러올 수 있는 형식을 지원합니다.
+              업로드: DXF, DWG(CAD) / JPG, JPEG, PNG, BMP(이미지). 다운로드: STL, OBJ(CAD·이미지 공통),
+              GLB(이미지 AI 3D 생성 시). 모두 일반 3D 소프트웨어에서 호환됩니다.
             </p>
           </div>
         </div>

@@ -1,9 +1,18 @@
-import { Suspense, useEffect, useRef } from "react";
+import { Component, Suspense, useEffect, useRef } from "react";
 import { Canvas, useLoader } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+
+class ViewerErrorBoundary extends Component<{ fallback: React.ReactNode; children: React.ReactNode }> {
+  state = { hasError: false };
+  static getDerivedStateFromError = () => ({ hasError: true });
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
 
 function disposeObject(obj: THREE.Object3D) {
   obj.traverse((c) => {
@@ -72,6 +81,21 @@ function Model({ url, format }: { url: string; format: "stl" | "obj" | "glb" }) 
   return <ObjModel url={url} />;
 }
 
+function ModelWithErrorBoundary({ url, format }: { url: string; format: "stl" | "obj" | "glb" }) {
+  return (
+    <ViewerErrorBoundary
+      fallback={
+        <mesh>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color="#3f3f46" wireframe />
+        </mesh>
+      }
+    >
+      <Model url={url} format={format} />
+    </ViewerErrorBoundary>
+  );
+}
+
 function Fallback() {
   return (
     <mesh>
@@ -90,14 +114,16 @@ export function Viewer3D({ modelUrl, format = "stl", className = "" }: Viewer3DP
     );
   }
 
+  const bg = "#18181b";
   return (
-    <div className={className} style={{ background: "#18181b", borderRadius: 8, overflow: "hidden", minHeight: 320 }}>
+    <div className={className} style={{ background: bg, borderRadius: 8, overflow: "hidden", minHeight: 320 }}>
       <Canvas camera={{ position: [4, 4, 4], fov: 45 }} gl={{ antialias: true }}>
+        <color attach="background" args={[bg]} />
         <ambientLight intensity={0.6} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
         <directionalLight position={[-5, -5, 5]} intensity={0.4} />
         <Suspense fallback={<Fallback />}>
-          <Model url={modelUrl} format={format} />
+          <ModelWithErrorBoundary url={modelUrl} format={format} />
         </Suspense>
         <OrbitControls makeDefault />
       </Canvas>
