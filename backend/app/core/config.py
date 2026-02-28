@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     max_upload_mb: int = 50
     # AI API (Phase 4) - optional
     meshy_api_key: str | None = None
+    # Supabase (optional - if set, uploads/exports use Storage instead of local disk)
+    supabase_url: str | None = None
+    supabase_service_role_key: str | None = None
 
     class Config:
         env_file = ".env"

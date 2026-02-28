@@ -68,10 +68,12 @@ npm run dev
 
 | 변수 | 필수 | 설명 |
 |------|------|------|
+| `SUPABASE_URL` | 선택 | Supabase Project URL (Settings → API). 설정 시 Storage 사용 |
+| `SUPABASE_SERVICE_ROLE_KEY` | 선택 | Supabase service_role 키. SUPABASE_URL과 함께 설정 |
 | `MESHY_API_KEY` | 선택 | Meshy Image-to-3D API 키. 없으면 이미지→3D는 단순 돌출만 동작 |
 | `MAX_UPLOAD_MB` | 선택 | 업로드 최대 크기(MB). 기본값 `50` |
-| `UPLOAD_DIR` | 선택 | 업로드 파일 저장 경로. 기본값 `uploads` |
-| `EXPORT_DIR` | 선택 | 변환 결과 저장 경로. 기본값 `exports` |
+| `UPLOAD_DIR` | 선택 | 업로드 파일 저장 경로. 기본값 `uploads` (Supabase 미사용 시) |
+| `EXPORT_DIR` | 선택 | 변환 결과 저장 경로. 기본값 `exports` (Supabase 미사용 시) |
 
 ### Frontend (로컬 개발 / Render Static Site)
 

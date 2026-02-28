@@ -46,7 +46,7 @@ def contours_to_polygons(binary: np.ndarray, min_area: float = 10.0) -> list[Pol
     return polygons
 
 
-def image_to_contours(image_path: Path, invert: bool = True) -> list[Polygon]:
+def image_to_contours(image_path: Path, invert: bool = True, min_area: float = 10.0) -> list[Polygon]:
     """Load image, binarize, and return list of contours as Polygons."""
     binary = load_and_binarize(image_path, invert=invert)
-    return contours_to_polygons(binary)
+    return contours_to_polygons(binary, min_area=min_area)

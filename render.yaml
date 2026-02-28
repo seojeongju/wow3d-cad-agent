@@ -1,5 +1,18 @@
-# Render Blueprint - Frontend Static Site only (backend is already deployed)
+# Render Blueprint - Frontend + Backend
 services:
+  # Backend API (FastAPI)
+  - type: web
+    name: wow3d-cad-agent
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+  # Frontend Static Site
   - type: web
     name: wow3d-cad-agent-frontend
     runtime: static

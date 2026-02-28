@@ -1,7 +1,9 @@
+import asyncio
 from pathlib import Path
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Query, Request
+from fastapi import APIRouter, File, UploadFile, HTTPException, Query, Request, Form
 from fastapi.responses import FileResponse
 
 from app.core.config import settings
@@ -14,8 +16,25 @@ router = APIRouter()
 DEFAULT_CAD_HEIGHT = 1.0
 
 
+def _parse_and_export_dxf_sync(file_path: Path, export_path: Path, height: float) -> dict:
+    """CPU-heavy DXF parse + mesh + export. Run in thread pool."""
+    result = parse_dxf(file_path)
+    contours = result["contours"]
+    if not contours:
+        return {"result": result, "contour_count": 0}
+    mesh = contours_to_mesh(contours, height=height)
+    export_path.mkdir(parents=True, exist_ok=True)
+    export_mesh(mesh, export_path / "model.stl", "stl")
+    export_mesh(mesh, export_path / "model.obj", "obj")
+    return {"result": result, "contour_count": len(contours)}
+
+
 @router.post("/parse")
-async def cad_parse(request: Request, file: UploadFile = File(...)):
+async def cad_parse(
+    request: Request,
+    file: UploadFile = File(...),
+    height: Annotated[float, Form()] = DEFAULT_CAD_HEIGHT,
+):
     """Upload DXF file for parsing and 3D conversion. Returns job_id and metadata."""
     client_ip = request.client.host if request.client else "unknown"
     if not upload_limiter.allow(client_ip):
@@ -37,27 +56,24 @@ async def cad_parse(request: Request, file: UploadFile = File(...)):
     if ext == ".dwg":
         return {"job_id": job_id, "filename": file.filename, "message": "DWG upload OK. Export as DXF in AutoCAD for conversion.", "converted": False}
 
+    export_path = settings.export_dir / "cad" / job_id
     try:
-        result = parse_dxf(file_path)
+        out = await asyncio.get_event_loop().run_in_executor(
+            None, _parse_and_export_dxf_sync, file_path, export_path, height
+        )
     except Exception as e:
         raise HTTPException(422, f"DXF parse failed: {e!s}")
 
-    contours = result["contours"]
-    if not contours:
+    result, contour_count = out["result"], out["contour_count"]
+    if contour_count == 0:
         return {"job_id": job_id, "filename": file.filename, "layers": result["layers"], "bounds": result["bounds"], "message": "No closed contours found for extrusion."}
-
-    mesh = contours_to_mesh(contours, height=DEFAULT_CAD_HEIGHT)
-    export_path = settings.export_dir / "cad" / job_id
-    export_path.mkdir(parents=True, exist_ok=True)
-    export_mesh(mesh, export_path / "model.stl", "stl")
-    export_mesh(mesh, export_path / "model.obj", "obj")
 
     return {
         "job_id": job_id,
         "filename": file.filename,
         "layers": result["layers"],
         "bounds": result["bounds"],
-        "contour_count": len(contours),
+        "contour_count": contour_count,
         "message": "Parsed and converted to 3D.",
     }
 
@@ -75,6 +91,11 @@ async def cad_export(job_id: str = Query(...), format: str = Query("stl", regex=
     return FileResponse(path, filename=f"model.{format}")
 
 
+def _parse_dxf_preview_sync(dxf_path: Path) -> dict:
+    """Parse DXF for preview metadata. Run in thread pool."""
+    return parse_dxf(dxf_path)
+
+
 @router.get("/preview")
 async def cad_preview(job_id: str = Query(...)):
     """Get metadata for a CAD job (layers, bounds)."""
@@ -85,7 +106,7 @@ async def cad_preview(job_id: str = Query(...)):
     if not dxf_files:
         return {"job_id": job_id, "has_file": False, "message": "DWG job or no DXF; use DXF for conversion."}
     try:
-        result = parse_dxf(dxf_files[0])
+        result = await asyncio.get_event_loop().run_in_executor(None, _parse_dxf_preview_sync, dxf_files[0])
         return {"job_id": job_id, "has_file": True, "layers": result["layers"], "bounds": result["bounds"], "line_count": result["line_count"]}
     except Exception:
         return {"job_id": job_id, "has_file": True}

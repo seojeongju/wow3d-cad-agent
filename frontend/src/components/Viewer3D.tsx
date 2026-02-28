@@ -1,9 +1,22 @@
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { Canvas, useLoader } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+
+function disposeObject(obj: THREE.Object3D) {
+  obj.traverse((c) => {
+    if ((c as THREE.Mesh).isMesh) {
+      const m = (c as THREE.Mesh);
+      m.geometry?.dispose();
+      if (m.material) {
+        const arr = Array.isArray(m.material) ? m.material : [m.material];
+        arr.forEach((mat) => (mat as THREE.Material).dispose?.());
+      }
+    }
+  });
+}
 
 type Viewer3DProps = {
   /** URL to STL, OBJ, or GLB */
@@ -23,7 +36,9 @@ function StlModel({ url }: { url: string }) {
 
 function ObjModel({ url }: { url: string }) {
   const obj = useLoader(OBJLoader, url);
+  const clonedRef = useRef<THREE.Group | null>(null);
   const cloned = obj.clone();
+  clonedRef.current = cloned;
   cloned.traverse((c) => {
     if ((c as THREE.Mesh).isMesh) {
       const m = (c as THREE.Mesh).material;
@@ -32,6 +47,7 @@ function ObjModel({ url }: { url: string }) {
       }
     }
   });
+  useEffect(() => () => { if (clonedRef.current) disposeObject(clonedRef.current); }, []);
   return <primitive object={cloned} />;
 }
 
@@ -46,6 +62,7 @@ function GlbModel({ url }: { url: string }) {
       }
     }
   });
+  useEffect(() => () => disposeObject(cloned), []);
   return <primitive object={cloned} />;
 }
 

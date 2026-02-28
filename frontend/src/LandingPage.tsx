@@ -1,9 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
 import { useDropzone } from "react-dropzone";
-import { Viewer3D } from "./components/Viewer3D";
-import { Hero3DViewer } from "./components/Hero3DViewer";
 import { cadParse, cadExportUrl, imageExtrude, imageExportUrl, imageTo3d } from "./api/client";
 import "./LandingPage.css";
+
+const Viewer3D = lazy(() => import("./components/Viewer3D").then((m) => ({ default: m.Viewer3D })));
+const Hero3DViewer = lazy(() => import("./components/Hero3DViewer").then((m) => ({ default: m.Hero3DViewer })));
 
 type Tab = "cad" | "image";
 
@@ -14,15 +15,23 @@ export default function LandingPage() {
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [viewerFormat, setViewerFormat] = useState<"stl" | "obj" | "glb">("stl");
   const [extrudeHeight, setExtrudeHeight] = useState(5);
+  const [cadHeight, setCadHeight] = useState(1);
   const [imageMode, setImageMode] = useState<"extrude" | "ai">("extrude");
+  const [imageInvert, setImageInvert] = useState(true);
+  const [imageSensitivity, setImageSensitivity] = useState<"low" | "medium" | "high">("medium");
   const [progress, setProgress] = useState<"idle" | "uploading" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  const handleRetry = useCallback(() => {
+    setProgress("idle");
+    setError(null);
+  }, []);
 
   const handleCadUpload = useCallback(async (file: File) => {
     setProgress("uploading");
     setError(null);
     try {
-      const r = await cadParse(file);
+      const r = await cadParse(file, cadHeight);
       setCadJobId(r.job_id);
       if (r.contour_count !== undefined && r.contour_count > 0) {
         setViewerUrl(cadExportUrl(r.job_id, "stl"));
@@ -35,14 +44,14 @@ export default function LandingPage() {
       setProgress("error");
       throw e;
     }
-  }, []);
+  }, [cadHeight]);
 
   const handleImageUpload = useCallback(async (file: File) => {
     setProgress("uploading");
     setError(null);
     try {
       if (imageMode === "ai") {
-        const r = await imageTo3d(file);
+        const r = await imageTo3d(file, { invert: imageInvert, sensitivity: imageSensitivity });
         setImageJobId(r.job_id);
         if (r.mode === "ai") {
           setViewerUrl(imageExportUrl(r.job_id, "glb"));
@@ -54,7 +63,7 @@ export default function LandingPage() {
         setProgress("done");
         return r;
       }
-      const r = await imageExtrude(file, extrudeHeight);
+      const r = await imageExtrude(file, extrudeHeight, { invert: imageInvert, sensitivity: imageSensitivity });
       setImageJobId(r.job_id);
       if (r.contour_count !== undefined && r.contour_count > 0) {
         setViewerUrl(imageExportUrl(r.job_id, "stl"));
@@ -67,7 +76,7 @@ export default function LandingPage() {
       setProgress("error");
       throw e;
     }
-  }, [imageMode, extrudeHeight]);
+  }, [imageMode, extrudeHeight, imageInvert, imageSensitivity]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -119,7 +128,9 @@ export default function LandingPage() {
           </div>
           <div className="landing-hero-viewer">
             <div className="landing-hero-viewer-frame">
-              <Hero3DViewer />
+              <Suspense fallback={<div style={{ aspectRatio: "4/3", minHeight: 280, background: "#111113", borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "center", color: "#71717a" }}>로딩 중…</div>}>
+                <Hero3DViewer />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -141,6 +152,22 @@ export default function LandingPage() {
             이미지 → 3D
           </button>
         </div>
+
+        {tab === "cad" && (
+          <div className="landing-options">
+            <label>
+              <span>돌출 높이</span>
+              <input
+                type="number"
+                min={0.1}
+                max={100}
+                step={0.1}
+                value={cadHeight}
+                onChange={(e) => setCadHeight(Number(e.target.value))}
+              />
+            </label>
+          </div>
+        )}
 
         {tab === "image" && (
           <div className="landing-options">
@@ -173,6 +200,18 @@ export default function LandingPage() {
                 />
               </>
             )}
+            <label className="landing-option-check">
+              <input type="checkbox" checked={imageInvert} onChange={(e) => setImageInvert(e.target.checked)} />
+              색 반전
+            </label>
+            <label>
+              <span>윤곽 감도</span>
+              <select value={imageSensitivity} onChange={(e) => setImageSensitivity(e.target.value as "low" | "medium" | "high")}>
+                <option value="low">낮음</option>
+                <option value="medium">보통</option>
+                <option value="high">높음</option>
+              </select>
+            </label>
           </div>
         )}
 
@@ -190,19 +229,29 @@ export default function LandingPage() {
         </div>
 
         {progress === "uploading" && (
-          <p className="landing-status">처리 중…</p>
+          <div className="landing-status loading">
+            <span className="landing-spinner" aria-hidden />
+            <span>{tab === "cad" ? "도면 분석 및 3D 변환 중…" : "이미지 분석 및 3D 변환 중…"}</span>
+          </div>
         )}
         {progress === "done" && currentJobId && (
           <p className="landing-status success">완료. 미리보기 아래에서 다운로드할 수 있습니다.</p>
         )}
         {progress === "error" && error && (
-          <p className="landing-status error" role="alert">
-            {error.includes("429") ? "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." : error}
-          </p>
+          <div className="landing-status error-wrap" role="alert">
+            <p className="landing-status error">
+              {error.includes("429") ? "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." : error}
+            </p>
+            <button type="button" className="landing-retry-btn" onClick={handleRetry}>다시 시도</button>
+          </div>
         )}
 
         {tab === "cad" && (
-          <p className="landing-note">DWG는 변환되지 않습니다. 오토캐드에서 DXF로 저장 후 업로드해 주세요.</p>
+          <div className="landing-dwg-hint">
+            <p className="landing-note">
+              <strong>DWG 파일을 사용하려면</strong> 오토캐드에서 [다른 이름으로 저장] → 형식을 <strong>DXF</strong>로 선택한 뒤 저장하고, 저장된 DXF 파일을 업로드하세요.
+            </p>
+          </div>
         )}
 
         {currentJobId && (
@@ -223,7 +272,9 @@ export default function LandingPage() {
 
       <section className="landing-viewer-wrap">
         <h3>3D 미리보기</h3>
-        <Viewer3D modelUrl={viewerUrl} format={viewerFormat} />
+        <Suspense fallback={<div style={{ background: "#18181b", borderRadius: 8, minHeight: 320, display: "flex", alignItems: "center", justifyContent: "center", color: "#71717a" }}>로딩 중…</div>}>
+          <Viewer3D modelUrl={viewerUrl} format={viewerFormat} />
+        </Suspense>
       </section>
 
       <section className="landing-showcase">
