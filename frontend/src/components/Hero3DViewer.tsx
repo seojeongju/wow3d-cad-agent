@@ -14,25 +14,27 @@ function HeroModel() {
 
   return (
     <group>
-      {/* Main torus knot - industrial/tech feel */}
+      {/* Main torus knot - 색상을 페이지와 조화되게 뮤트 톤 */}
       <mesh ref={meshRef} castShadow receiveShadow>
         <torusKnotGeometry args={[0.6, 0.2, 128, 32]} />
         <meshStandardMaterial
-          color="#6366f1"
-          metalness={0.85}
-          roughness={0.15}
-          envMapIntensity={1}
+          color="#71717a"
+          metalness={0.75}
+          roughness={0.25}
+          envMapIntensity={0.8}
+          emissive="#27272a"
+          emissiveIntensity={0.08}
         />
       </mesh>
-      {/* Inner ring accent */}
+      {/* Inner ring - 악센트를 은은하게 */}
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -0.3]}>
         <torusGeometry args={[0.85, 0.03, 16, 64]} />
         <meshStandardMaterial
-          color="#818cf8"
-          metalness={0.9}
-          roughness={0.1}
+          color="#52525b"
+          metalness={0.8}
+          roughness={0.2}
           transparent
-          opacity={0.6}
+          opacity={0.5}
         />
       </mesh>
     </group>
@@ -51,11 +53,11 @@ export function Hero3DViewer({ className = "" }: Hero3DViewerProps) {
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
       >
-        <color attach="background" args={["transparent"]} />
-        <ambientLight intensity={0.4} />
-        <directionalLight position={[5, 5, 5]} intensity={1.2} />
-        <directionalLight position={[-3, 2, -2]} intensity={0.5} />
-        <pointLight position={[0, 2, 2]} intensity={0.8} color="#6366f1" />
+        <color attach="background" args={["#0f0f12"]} />
+        <ambientLight intensity={0.35} />
+        <directionalLight position={[5, 5, 5]} intensity={0.9} color="#e4e4e7" />
+        <directionalLight position={[-3, 2, -2]} intensity={0.35} color="#a1a1aa" />
+        <pointLight position={[0, 2, 2]} intensity={0.25} color="#6366f1" />
         <HeroModel />
         <OrbitControls
           makeDefault
@@ -74,7 +76,7 @@ export function Hero3DViewer({ className = "" }: Hero3DViewerProps) {
           left: "50%",
           transform: "translateX(-50%)",
           fontSize: 11,
-          color: "rgba(255,255,255,0.5)",
+          color: "rgba(161, 161, 170, 0.75)",
           pointerEvents: "none",
         }}
       >
