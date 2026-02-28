@@ -137,6 +137,7 @@ async def cad_parse(
         except DWGConversionAPIError as e:
             raise HTTPException(502, f"DWG API conversion failed: {e!s}")
         except Exception as e:
+            logger.exception("CAD parse failed")
             raise HTTPException(422, f"CAD parse failed: {e!s}")
 
         if use_supabase:

@@ -63,12 +63,16 @@ def contours_to_mesh(polygons: list[Polygon], height: float = 1.0) -> trimesh.Tr
 
 
 def export_mesh(mesh: trimesh.Trimesh, out_path: Path, fmt: str) -> None:
-    """Export mesh to STL or OBJ file. Format inferred from path extension."""
+    """Export mesh to STL or OBJ using trimesh exchange (avoids export() callable issues)."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     path_str = str(out_path)
     if fmt == "stl":
-        mesh.export(path_str)
+        data = trimesh.exchange.stl.export_stl(mesh)
+        with open(path_str, "wb") as f:
+            f.write(data)
     elif fmt == "obj":
-        mesh.export(path_str)
+        data = trimesh.exchange.obj.export_obj(mesh)
+        with open(path_str, "w", encoding="utf-8") as f:
+            f.write(data)
     else:
         raise ValueError(f"Unsupported format: {fmt}")
