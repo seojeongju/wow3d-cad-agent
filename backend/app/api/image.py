@@ -1,15 +1,33 @@
 import asyncio
+import tempfile
 from pathlib import Path
 import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, Query, Form, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 from app.core.config import settings
 from app.core.rate_limit import upload_limiter
 from app.services.image_contours import image_to_contours
 from app.services.extrusion import contours_to_mesh, export_mesh
+from app.services import supabase_storage
+
+_BUCKET_UPLOADS = "uploads"
+_BUCKET_EXPORTS = "exports"
+
+
+def _upload_image_export_to_storage(export_path: Path, job_id: str, include_glb: bool = False) -> None:
+    """Upload model.stl, model.obj (and optionally model.glb) to Storage exports/image/job_id/."""
+    for name in ("model.stl", "model.obj") + (("model.glb",) if include_glb else ()):
+        p = export_path / name
+        if p.exists():
+            supabase_storage.upload(
+                _BUCKET_EXPORTS,
+                supabase_storage.exports_path_image(job_id, name),
+                p.read_bytes(),
+                "application/octet-stream",
+            )
 
 router = APIRouter()
 
@@ -69,27 +87,39 @@ async def image_extrude(
     if ext not in (".png", ".jpg", ".jpeg", ".bmp"):
         raise HTTPException(400, "Only PNG, JPG, BMP are supported")
     job_id = str(uuid.uuid4())
-    upload_path = settings.upload_dir / "image" / job_id
-    upload_path.mkdir(parents=True, exist_ok=True)
-    file_path = upload_path / (file.filename or "image.png")
     content = await file.read()
     if len(content) > settings.max_upload_mb * 1024 * 1024:
         raise HTTPException(400, f"File too large (max {settings.max_upload_mb}MB)")
-    file_path.write_bytes(content)
+
+    use_supabase = supabase_storage.is_configured()
+    if use_supabase:
+        supabase_storage.upload(
+            _BUCKET_UPLOADS,
+            supabase_storage.uploads_path_image(job_id, file.filename or "image.png"),
+            content,
+            "application/octet-stream",
+        )
 
     min_area = _sensitivity_to_min_area(sensitivity)
-    export_path = settings.export_dir / "image" / job_id
-    try:
-        contour_count = await asyncio.get_event_loop().run_in_executor(
-            None, _extrude_image_sync, file_path, export_path, height, invert_bool, min_area
-        )
-    except Exception as e:
-        raise HTTPException(422, f"Image processing failed: {e!s}")
+    with tempfile.TemporaryDirectory() as tmp:
+        file_path = Path(tmp) / (file.filename or "image.png")
+        file_path.write_bytes(content)
+        export_path = Path(tmp) / "export"
+        export_path.mkdir()
+        try:
+            contour_count = await asyncio.get_event_loop().run_in_executor(
+                None, _extrude_image_sync, file_path, export_path, height, invert_bool, min_area
+            )
+        except Exception as e:
+            raise HTTPException(422, f"Image processing failed: {e!s}")
 
-    if contour_count == 0:
-        return {"job_id": job_id, "filename": file.filename, "height": height, "contour_count": 0, "message": "No contours found. Try a clearer image or invert colors."}
+        if use_supabase and contour_count > 0:
+            _upload_image_export_to_storage(export_path, job_id, include_glb=False)
 
-    return {"job_id": job_id, "filename": file.filename, "height": height, "contour_count": contour_count, "message": "Extruded to 3D."}
+        if contour_count == 0:
+            return {"job_id": job_id, "filename": file.filename, "height": height, "contour_count": 0, "message": "No contours found. Try a clearer image or invert colors."}
+
+        return {"job_id": job_id, "filename": file.filename, "height": height, "contour_count": contour_count, "message": "Extruded to 3D."}
 
 
 @router.post("/to3d")
@@ -108,44 +138,64 @@ async def image_to3d(
     if ext not in (".png", ".jpg", ".jpeg"):
         raise HTTPException(400, "Only PNG, JPG are supported for AI 3D")
     job_id = str(uuid.uuid4())
-    upload_path = settings.upload_dir / "image" / job_id
-    upload_path.mkdir(parents=True, exist_ok=True)
-    file_path = upload_path / (file.filename or "image.png")
     content = await file.read()
-    file_path.write_bytes(content)
-    export_path = settings.export_dir / "image" / job_id
-    fallback_msg: str | None = None
 
-    if settings.meshy_api_key:
-        from app.services.meshy_client import run_image_to_3d
-        ok, err = run_image_to_3d(settings.meshy_api_key, file_path, export_path)
-        if ok:
-            return {"job_id": job_id, "filename": file.filename, "mode": "ai", "message": "AI 3D model generated."}
-        fallback_msg = f"AI failed ({err}); used simple extrusion."
-
-    min_area = _sensitivity_to_min_area(sensitivity)
-    try:
-        contour_count = await asyncio.get_event_loop().run_in_executor(
-            None, _extrude_image_fallback_sync, file_path, export_path, 5.0, invert_bool, min_area
+    use_supabase = supabase_storage.is_configured()
+    if use_supabase:
+        supabase_storage.upload(
+            _BUCKET_UPLOADS,
+            supabase_storage.uploads_path_image(job_id, file.filename or "image.png"),
+            content,
+            "application/octet-stream",
         )
-    except Exception as e:
-        raise HTTPException(422, f"Image processing failed: {e!s}")
-    if contour_count == 0:
-        return {"job_id": job_id, "filename": file.filename, "mode": "extrude", "contour_count": 0, "message": "No contours found. Try a clearer image."}
-    return {
-        "job_id": job_id,
-        "filename": file.filename,
-        "mode": "extrude",
-        "contour_count": contour_count,
-        "message": fallback_msg or "Extruded to 3D (no AI key set).",
-    }
+
+    with tempfile.TemporaryDirectory() as tmp:
+        file_path = Path(tmp) / (file.filename or "image.png")
+        file_path.write_bytes(content)
+        export_path = Path(tmp) / "export"
+        export_path.mkdir()
+        fallback_msg: str | None = None
+
+        if settings.meshy_api_key:
+            from app.services.meshy_client import run_image_to_3d
+            ok, err = run_image_to_3d(settings.meshy_api_key, file_path, export_path)
+            if ok:
+                if use_supabase:
+                    _upload_image_export_to_storage(export_path, job_id, include_glb=True)
+                return {"job_id": job_id, "filename": file.filename, "mode": "ai", "message": "AI 3D model generated."}
+            fallback_msg = f"AI failed ({err}); used simple extrusion."
+
+        min_area = _sensitivity_to_min_area(sensitivity)
+        try:
+            contour_count = await asyncio.get_event_loop().run_in_executor(
+                None, _extrude_image_fallback_sync, file_path, export_path, 5.0, invert_bool, min_area
+            )
+        except Exception as e:
+            raise HTTPException(422, f"Image processing failed: {e!s}")
+        if contour_count == 0:
+            return {"job_id": job_id, "filename": file.filename, "mode": "extrude", "contour_count": 0, "message": "No contours found. Try a clearer image."}
+        if use_supabase:
+            _upload_image_export_to_storage(export_path, job_id, include_glb=False)
+        return {
+            "job_id": job_id,
+            "filename": file.filename,
+            "mode": "extrude",
+            "contour_count": contour_count,
+            "message": fallback_msg or "Extruded to 3D (no AI key set).",
+        }
 
 
 @router.get("/export")
 async def image_export(job_id: str = Query(...), format: str = Query("stl", regex="^(stl|obj|glb)$")):
     """Download extruded or AI-generated 3D file."""
+    filename = f"model.{format}"
+    if supabase_storage.is_configured():
+        storage_path = supabase_storage.exports_path_image(job_id, filename)
+        if supabase_storage.file_exists(_BUCKET_EXPORTS, storage_path):
+            url = supabase_storage.get_signed_url(_BUCKET_EXPORTS, storage_path)
+            return RedirectResponse(url=url, status_code=302)
     export_path = settings.export_dir / "image" / job_id
-    path = export_path / f"model.{format}"
+    path = export_path / filename
     if not path.exists():
         raise HTTPException(404, "Export not found.")
-    return FileResponse(path, filename=f"model.{format}")
+    return FileResponse(path, filename=filename)

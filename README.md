@@ -75,6 +75,8 @@ npm run dev
 | `UPLOAD_DIR` | 선택 | 업로드 파일 저장 경로. 기본값 `uploads` (Supabase 미사용 시) |
 | `EXPORT_DIR` | 선택 | 변환 결과 저장 경로. 기본값 `exports` (Supabase 미사용 시) |
 
+- **`.env` 설정 방법**: `backend/ENV_SETUP.md` 참고 (위치, Supabase 값 복사 방법, 주의사항 등).
+
 ### Frontend (로컬 개발 / Render Static Site)
 
 | 변수 | 필수 | 설명 |

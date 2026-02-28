@@ -21,3 +21,6 @@ python-multipart>=0.0.6
 
 # HTTP client for AI API (Phase 4)
 httpx>=0.26.0
+
+# Supabase (Storage)
+supabase>=2.0.0
