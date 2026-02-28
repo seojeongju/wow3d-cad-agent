@@ -1,4 +1,4 @@
-"""Parse DXF and extract 2D contours for extrusion."""
+"""Parse DXF/DWG and extract 2D contours for extrusion. DWG requires ODA File Converter (odafc)."""
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +8,11 @@ from ezdxf.entities import DXFEntity, LWPolyline, Line, Arc, Circle, Polyline
 from shapely.geometry import LineString, Polygon
 from shapely.ops import polygonize
 import numpy as np
+
+# Raised when DWG is uploaded but ODA File Converter is not available
+class ODAFCNotAvailableError(Exception):
+    """DWG conversion requires ODA File Converter to be installed and configured."""
+    pass
 
 
 def get_flat_points(entity: DXFEntity) -> list[tuple[float, float]]:
@@ -113,9 +118,8 @@ def get_bounds(doc: Drawing) -> dict[str, float] | None:
     return None
 
 
-def parse_dxf(path: Path) -> dict[str, Any]:
-    """Parse DXF file and return metadata and contours for extrusion."""
-    doc = ezdxf.readfile(str(path))
+def parse_dxf_doc(doc: Drawing) -> dict[str, Any]:
+    """Parse an already-loaded DXF/DWG document and return metadata and contours for extrusion."""
     layers = get_layers(doc)
     bounds = get_bounds(doc)
     lines = collect_geometry(doc)
@@ -126,3 +130,40 @@ def parse_dxf(path: Path) -> dict[str, Any]:
         "contours": polygons,
         "line_count": len(lines),
     }
+
+
+def load_cad_document(path: Path) -> Drawing:
+    """Load a DXF or DWG file and return an ezdxf Drawing. DWG requires ODA File Converter (odafc)."""
+    path = Path(path)
+    suffix = path.suffix.lower()
+    if suffix == ".dwg":
+        try:
+            from ezdxf.addons import odafc
+        except ImportError:
+            raise ODAFCNotAvailableError(
+                "DWG support requires ezdxf addon 'odafc' and ODA File Converter. "
+                "Install ODA File Converter and set ODA_FILE_CONVERTER_PATH, or upload DXF."
+            )
+        try:
+            if not odafc.is_installed():
+                raise ODAFCNotAvailableError(
+                    "ODA File Converter is not installed or not found. "
+                    "Set ODA_FILE_CONVERTER_PATH to the converter executable, or upload DXF."
+                )
+            return odafc.readfile(str(path))
+        except Exception as e:
+            if type(e).__name__ == "ODAFCNotInstalledError":
+                raise ODAFCNotAvailableError(
+                    "ODA File Converter is not installed or not found. "
+                    "Set ODA_FILE_CONVERTER_PATH, or upload DXF."
+                ) from e
+            raise
+    if suffix == ".dxf":
+        return ezdxf.readfile(str(path))
+    raise ValueError(f"Unsupported CAD file extension: {suffix}. Use .dxf or .dwg.")
+
+
+def parse_dxf(path: Path) -> dict[str, Any]:
+    """Parse DXF or DWG file and return metadata and contours for extrusion."""
+    doc = load_cad_document(path)
+    return parse_dxf_doc(doc)

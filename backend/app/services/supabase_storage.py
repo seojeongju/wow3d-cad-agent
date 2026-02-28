@@ -1,9 +1,12 @@
 """Supabase Storage helper: upload, download, signed URL. Uses buckets 'uploads' and 'exports'."""
 from __future__ import annotations
 
+import logging
 from typing import Optional
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 _BUCKET_UPLOADS = "uploads"
 _BUCKET_EXPORTS = "exports"
@@ -49,9 +52,16 @@ def get_signed_url(bucket: str, path: str, expires_in: int = 3600) -> str:
     if not client:
         raise RuntimeError("Supabase not configured")
     resp = client.storage.from_(bucket).create_signed_url(path, expires_in)
-    # API returns {"path": "...", "signedURL": "...", "error": null} or similar
-    url = resp.get("signedURL") or resp.get("signedUrl")
-    if not url:
+    if not isinstance(resp, dict):
+        raise RuntimeError(f"Unexpected signed URL response type: {type(resp)}")
+    err = resp.get("error") or resp.get("errorMessage")
+    if err:
+        raise RuntimeError(f"Supabase signed URL error: {err}")
+    url = resp.get("signedUrl") or resp.get("signedURL")
+    if not url and isinstance(resp.get("data"), dict):
+        url = resp["data"].get("signedUrl") or resp["data"].get("signedURL")
+    if not url or not isinstance(url, str):
+        logger.warning("Supabase create_signed_url response: %s", resp)
         raise RuntimeError(f"No signed URL in response: {resp}")
     return url
 

@@ -111,6 +111,47 @@ MAX_UPLOAD_MB=50
 
 ---
 
+### ODA_FILE_CONVERTER_PATH (DWG 변환 시 선택)
+
+**의미**  
+서버에서 **DWG 파일을 직접 변환**하려면 [ODA File Converter](https://www.opendesign.com/guestfiles/oda_file_converter) 실행 파일 경로를 넣습니다.  
+비워 두면 DWG 업로드 시 "ODA File Converter를 설치하거나 DXF를 업로드하세요" 안내가 나옵니다.
+
+**설정 방법**
+
+- **Windows**: ODA 설치 후 예: `C:\Program Files\ODA\ODAFileConverter\ODAFileConverter.exe`
+- **Linux (Render/Docker)**: 설치 스크립트에서 다운로드한 실행 파일 또는 AppImage의 **절대 경로** (자세한 절차는 `backend/DWG_SETUP.md` 참고)
+
+** .env 예시**
+
+```env
+ODA_FILE_CONVERTER_PATH=/app/ODAFileConverter
+```
+
+---
+
+### API2CONVERT_API_KEY (DWG 변환 시 선택, 로컬 설치 불필요)
+
+**의미**  
+[DWG→DXF 변환](https://www.api2convert.com/documentation)을 **클라우드 API**로 할 때 쓰는 API 키입니다.  
+ODA File Converter를 서버에 설치하지 않아도 되며, **API 키만 설정**하면 DWG 업로드 시 자동으로 API2Convert로 변환 후 3D 처리합니다.
+
+**값 얻는 방법**
+
+1. [api2convert.com](https://www.api2convert.com) 가입
+2. 대시보드에서 **API key** 발급 (무료/유료 플랜 있음)
+3. `backend/.env` 또는 Render **Environment**에 `API2CONVERT_API_KEY=발급받은키` 추가
+
+** .env 예시**
+
+```env
+API2CONVERT_API_KEY=your-api2convert-api-key
+```
+
+- DWG 변환은 **ODA(로컬)** 또는 **API2Convert(API)** 중 하나만 있어도 됩니다. 둘 다 있으면 API 키가 설정된 경우 API 방식을 우선 사용합니다.
+
+---
+
 ## 3. .env 파일 작성 규칙
 
 - **위치**: 반드시 **`backend/.env`** (backend 폴더 안)

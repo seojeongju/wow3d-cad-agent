@@ -1,11 +1,12 @@
 import asyncio
+import logging
 import tempfile
 from pathlib import Path
 import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, Query, Form, Request
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 
 from app.core.config import settings
 from app.core.rate_limit import upload_limiter
@@ -15,6 +16,7 @@ from app.services import supabase_storage
 
 _BUCKET_UPLOADS = "uploads"
 _BUCKET_EXPORTS = "exports"
+logger = logging.getLogger(__name__)
 
 
 def _upload_image_export_to_storage(export_path: Path, job_id: str, include_glb: bool = False) -> None:
@@ -194,8 +196,17 @@ async def image_export(job_id: str = Query(...), format: str = Query("stl", rege
         try:
             url = supabase_storage.get_signed_url(_BUCKET_EXPORTS, storage_path)
             return RedirectResponse(url=url, status_code=302)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Image export signed URL failed job_id=%s format=%s: %s", job_id, format, e)
+        try:
+            data = supabase_storage.download(_BUCKET_EXPORTS, storage_path)
+            return Response(
+                content=data,
+                media_type="application/octet-stream",
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            )
+        except Exception as e:
+            logger.warning("Image export download from Storage failed job_id=%s format=%s: %s", job_id, format, e)
     export_path = settings.export_dir / "image" / job_id
     path = export_path / filename
     if not path.exists():
