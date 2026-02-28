@@ -24,11 +24,13 @@ DEFAULT_CAD_HEIGHT = 1.0
 
 def _parse_and_export_dxf_sync(file_path: Path, export_path: Path, height: float) -> dict:
     """CPU-heavy DXF parse + mesh + export. Run in thread pool."""
+    h = float(height) if height is not None else DEFAULT_CAD_HEIGHT
+    h = max(0.1, min(100.0, h))
     result = parse_dxf(file_path)
     contours = result["contours"]
     if not contours:
         return {"result": result, "contour_count": 0}
-    mesh = contours_to_mesh(contours, height=height)
+    mesh = contours_to_mesh(contours, height=h)
     export_path.mkdir(parents=True, exist_ok=True)
     export_mesh(mesh, export_path / "model.stl", "stl")
     export_mesh(mesh, export_path / "model.obj", "obj")
@@ -98,6 +100,12 @@ async def cad_parse(
     if len(content) > settings.max_upload_mb * 1024 * 1024:
         raise HTTPException(400, f"File too large (max {settings.max_upload_mb}MB)")
 
+    try:
+        height_val = float(height)
+    except (TypeError, ValueError):
+        height_val = DEFAULT_CAD_HEIGHT
+    height_val = max(0.1, min(100.0, height_val))
+
     use_supabase = supabase_storage.is_configured()
     if use_supabase:
         supabase_storage.upload(
@@ -118,7 +126,7 @@ async def cad_parse(
                 _parse_and_export_cad_sync,
                 file_path,
                 export_path,
-                height,
+                height_val,
                 settings.api2convert_api_key,
             )
         except ODAFCNotAvailableError:
