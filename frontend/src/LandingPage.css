@@ -79,6 +79,12 @@
   .landing-hero-content {
     text-align: center;
   }
+  .landing-hero-sub {
+    max-width: none;
+  }
+  .landing-hero-cta {
+    justify-content: center;
+  }
   .landing-hero-viewer {
     order: -1;
   }
@@ -99,31 +105,99 @@
   background: rgba(99, 102, 241, 0.15);
   border: 1px solid rgba(99, 102, 241, 0.3);
   border-radius: 9999px;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
-.landing-hero h1 {
-  font-size: clamp(2rem, 4vw, 2.75rem);
+/* Theia-style: 2-line headline, accent on key word */
+.landing-hero-title {
+  display: block;
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
   font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
-  margin: 0 0 1rem;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+  margin: 0 0 0.75rem;
+}
+
+.landing-hero-title-line {
+  display: block;
   background: linear-gradient(135deg, var(--text) 0%, var(--text-muted) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+.landing-hero-title-accent {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-hero-subhead {
+  font-size: 1.125rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0 0 1.25rem;
+}
+
 .landing-hero-sub {
   font-size: 1.0625rem;
   color: var(--text-muted);
-  line-height: 1.65;
-  margin: 0 0 0.75rem;
+  line-height: 1.7;
+  margin: 0 0 1.5rem;
+  max-width: 32rem;
+}
+
+.landing-hero-sub strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Theia-style CTA row: primary button + hint + link */
+.landing-hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.landing-hero-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  border: none;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.landing-hero-cta-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
 }
 
 .landing-hero-cta-hint {
+  font-size: 0.875rem;
+  color: rgba(161, 161, 170, 0.9);
+}
+
+.landing-hero-cta-link {
   font-size: 0.9375rem;
-  color: rgba(161, 161, 170, 0.8);
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.landing-hero-cta-link:hover {
+  color: var(--accent-hover);
 }
 
 /* Hero 3D Viewer frame - glassmorphism */
@@ -155,6 +229,12 @@
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
+}
+
+/* Anchor scroll offset for sticky nav */
+#converter,
+#why {
+  scroll-margin-top: 4rem;
 }
 
 /* Converter section below hero grid */

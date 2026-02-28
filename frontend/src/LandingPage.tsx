@@ -102,12 +102,20 @@ export default function LandingPage() {
         <div className="landing-hero-grid">
           <div className="landing-hero-content">
             <div className="landing-hero-badge">2D → 3D AI 변환</div>
-            <h1>AI 기반 3D 모델 생성기</h1>
+            <h1 className="landing-hero-title">
+              <span className="landing-hero-title-line">2D에서 3D로의</span>
+              <span className="landing-hero-title-line landing-hero-title-accent">재구성</span>
+            </h1>
+            <p className="landing-hero-subhead">도면·이미지로 제조 가능한 3D 모델 생성</p>
             <p className="landing-hero-sub">
-              2D 도면(DXF)과 이미지(손글씨·스케치)를 업로드하면 정확하고 품질 높은 3D 모델로 변환됩니다.
-              하나의 워크플로우에서 속도와 정확도를 경험하세요.
+              <strong>AI 기술</strong>과 도면 파싱을 결합해 2D 도면(DXF)과 이미지(손글씨·스케치)를
+              업로드하면 즉시 품질 높은 3D 모델로 변환됩니다. <strong>한 곳에서</strong> 속도와 정확도를 경험하세요.
             </p>
-            <p className="landing-hero-cta-hint">아래에서 파일을 업로드하고 변환된 3D를 확인하세요.</p>
+            <div className="landing-hero-cta">
+              <a href="#converter" className="landing-hero-cta-btn">무료 체험 시작</a>
+              <span className="landing-hero-cta-hint">신용 카드 필요 없음</span>
+              <a href="#why" className="landing-hero-cta-link">원리 보기</a>
+            </div>
           </div>
           <div className="landing-hero-viewer">
             <div className="landing-hero-viewer-frame">
@@ -116,7 +124,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="landing-hero-converter">
+        <div id="converter" className="landing-hero-converter">
         <div className="landing-tabs">
           <button
             type="button"
@@ -227,7 +235,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="landing-why">
+      <section id="why" className="landing-why">
         <h2>Wow3D를 선택해야 하는 이유</h2>
         <p className="landing-why-sub">
           정확하고 강력한 2D→3D 변환을 한 곳에서 경험하세요.
