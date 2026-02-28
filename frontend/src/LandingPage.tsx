@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Viewer3D } from "./components/Viewer3D";
+import { Hero3DViewer } from "./components/Hero3DViewer";
 import { cadParse, cadExportUrl, imageExtrude, imageExportUrl, imageTo3d } from "./api/client";
 import "./LandingPage.css";
 
@@ -98,12 +99,24 @@ export default function LandingPage() {
       </nav>
 
       <section className="landing-hero">
-        <h1>AI 기반 3D 모델 생성기</h1>
-        <p className="landing-hero-sub">
-          2D 도면(DXF)과 이미지(손글씨·스케치)를 업로드하면 정확하고 품질 높은 3D 모델로 변환됩니다.
-          하나의 워크플로우에서 속도와 정확도를 경험하세요.
-        </p>
+        <div className="landing-hero-grid">
+          <div className="landing-hero-content">
+            <div className="landing-hero-badge">2D → 3D AI 변환</div>
+            <h1>AI 기반 3D 모델 생성기</h1>
+            <p className="landing-hero-sub">
+              2D 도면(DXF)과 이미지(손글씨·스케치)를 업로드하면 정확하고 품질 높은 3D 모델로 변환됩니다.
+              하나의 워크플로우에서 속도와 정확도를 경험하세요.
+            </p>
+            <p className="landing-hero-cta-hint">아래에서 파일을 업로드하고 변환된 3D를 확인하세요.</p>
+          </div>
+          <div className="landing-hero-viewer">
+            <div className="landing-hero-viewer-frame">
+              <Hero3DViewer />
+            </div>
+          </div>
+        </div>
 
+        <div className="landing-hero-converter">
         <div className="landing-tabs">
           <button
             type="button"
@@ -197,6 +210,7 @@ export default function LandingPage() {
             ))}
           </div>
         )}
+        </div>
       </section>
 
       <section className="landing-viewer-wrap">
