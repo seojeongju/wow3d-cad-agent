@@ -67,7 +67,7 @@ def collect_geometry(doc: Drawing) -> list[LineString]:
     msp = doc.modelspace()
     lines: list[LineString] = []
     for entity in msp:
-        if entity.dxf.dxftype() in ("LINE", "LWPOLYLINE", "ARC", "CIRCLE", "POLYLINE"):
+        if entity.dxftype() in ("LINE", "LWPOLYLINE", "ARC", "CIRCLE", "POLYLINE"):
             ls = entity_to_linestring(entity)
             if ls and not ls.is_empty:
                 lines.append(ls)
