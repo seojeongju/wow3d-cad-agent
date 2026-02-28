@@ -156,18 +156,36 @@ export function Viewer3D({ modelUrl, format = "stl", className = "" }: Viewer3DP
   }
 
   const bg = "#18181b";
+  const viewHeight = 400;
   return (
-    <div className={className} style={{ background: bg, borderRadius: 8, overflow: "hidden", minHeight: 320 }}>
-      <Canvas camera={{ position: [4, 4, 4], fov: 45 }} gl={{ antialias: true }}>
-        <color attach="background" args={[bg]} />
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-        <directionalLight position={[-5, -5, 5]} intensity={0.4} />
-        <Suspense fallback={<Fallback />}>
-          <ModelWithErrorBoundary url={modelUrl} format={format} />
-        </Suspense>
-        <OrbitControls makeDefault />
-      </Canvas>
+    <div
+      className={className}
+      style={{
+        background: bg,
+        borderRadius: 8,
+        overflow: "hidden",
+        minHeight: viewHeight,
+        height: viewHeight,
+        width: "100%",
+        position: "relative",
+      }}
+    >
+      <div style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}>
+        <Canvas
+          camera={{ position: [4, 4, 4], fov: 45 }}
+          gl={{ antialias: true }}
+          style={{ display: "block", width: "100%", height: "100%" }}
+        >
+          <color attach="background" args={[bg]} />
+          <ambientLight intensity={0.6} />
+          <directionalLight position={[10, 10, 5]} intensity={1} />
+          <directionalLight position={[-5, -5, 5]} intensity={0.4} />
+          <Suspense fallback={<Fallback />}>
+            <ModelWithErrorBoundary url={modelUrl} format={format} />
+          </Suspense>
+          <OrbitControls makeDefault target={[0, 0, 0]} />
+        </Canvas>
+      </div>
     </div>
   );
 }
